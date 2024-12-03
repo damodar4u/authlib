@@ -21,12 +21,20 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
+            // Print clientId, clientSecret, and redirectUri for debugging
+            System.out.println("Client ID: " + config.getClientId());
+            System.out.println("Client Secret: " + config.getClientSecret());
+            System.out.println("Redirect URI: " + config.getRedirectUri());
+
             // Construct the Azure AD authorization URL
             String loginUrl = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize" +
                     "?client_id=" + URLEncoder.encode(config.getClientId(), "UTF-8") +
                     "&response_type=code" +
                     "&redirect_uri=" + URLEncoder.encode(config.getRedirectUri(), "UTF-8") +
                     "&scope=openid%20profile%20email";
+
+            // Print loginUrl for debugging
+            System.out.println("Login URL: " + loginUrl);
 
             // Redirect the user to Azure AD login page
             resp.sendRedirect(loginUrl);
