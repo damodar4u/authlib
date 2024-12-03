@@ -1,3 +1,9 @@
+package com.example.authlib.servlets;
+
+import com.example.authlib.config.AuthConfig;
+import com.example.authlib.utils.TokenUtils;
+
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -15,15 +21,15 @@ public class AuthCallbackServlet extends HttpServlet {
                 return;
             }
 
-            // Exchange authorization code for tokens
-            var tokenResponse = TokenUtils.exchangeAuthCodeForTokens(authCode, config);
+            // Use MSAL4J to acquire an access token
+            String accessToken = TokenUtils.acquireTokenWithAuthCode(authCode, config);
 
-            // Extract claims from the ID token
-            var claims = ClaimsExtractor.extractClaims(tokenResponse.getIdToken());
+            // Optionally, validate and extract claims (if using ID token)
+            // Claims claims = TokenUtils.extractClaims(idToken);
 
-            // Return claims as JSON response
+            // Return the token as JSON
             resp.setContentType("application/json");
-            resp.getWriter().write(new ObjectMapper().writeValueAsString(claims));
+            resp.getWriter().write("{\"accessToken\": \"" + accessToken + "\"}");
 
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
