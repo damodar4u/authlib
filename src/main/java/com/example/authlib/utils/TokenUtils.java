@@ -1,37 +1,35 @@
 package com.example.authlib.utils;
 
 import com.example.authlib.config.AuthConfig;
-import com.example.authlib.models.TokenResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.message.BasicNameValuePair;
+import com.microsoft.aad.msal4j.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URI;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 public class TokenUtils {
-    public static TokenResponse exchangeAuthCodeForTokens(String authCode, AuthConfig config) throws IOException {
-        HttpPost post = new HttpPost("https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token");
 
-        List<BasicNameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("client_id", config.getClientId()));
-        params.add(new BasicNameValuePair("client_secret", config.getClientSecret()));
-        params.add(new BasicNameValuePair("code", authCode));
-        params.add(new BasicNameValuePair("redirect_uri", config.getRedirectUri()));
-        params.add(new BasicNameValuePair("grant_type", "authorization_code"));
+    // Acquire token using authorization code flow
+    public static String acquireTokenWithAuthCode(String authCode, AuthConfig config) throws Exception {
+        ConfidentialClientApplication app = ConfidentialClientApplication.builder(
+            config.getClientId(),
+            ClientSecret.fromSecret(config.getClientSecret())
+        ).build();
 
-        post.setEntity(new UrlEncodedFormEntity(params));
+        AuthorizationCodeParameters parameters = AuthorizationCodeParameters.builder(
+            authCode,
+            new URI(config.getRedirectUri())
+        ).scopes(Collections.singleton("https://graph.microsoft.com/.default")).build();
 
-        try (CloseableHttpClient client = HttpClients.createDefault();
-             CloseableHttpResponse response = client.execute(post)) {
+        IAuthenticationResult result = app.acquireToken(parameters).get();
 
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(response.getEntity().getContent(), TokenResponse.class);
-        }
+        return result.accessToken();
+    }
+
+    // Validate ID token and extract claims
+    public static Claims extractClaims(String idToken) {
+        DecodedJWT jwt = JWT.decode(idToken);
+        return jwt.getClaims();
     }
 }
