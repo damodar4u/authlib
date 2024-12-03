@@ -2,11 +2,14 @@ package com.example.authlib.servlets;
 
 import com.example.authlib.config.AuthConfig;
 import com.example.authlib.utils.TokenUtils;
+import com.example.authlib.utils.ClaimsExtractor;
+import com.auth0.jwt.interfaces.Claim;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 public class AuthCallbackServlet extends HttpServlet {
     @Override
@@ -21,15 +24,23 @@ public class AuthCallbackServlet extends HttpServlet {
                 return;
             }
 
-            // Use MSAL4J to acquire an access token
-            String accessToken = TokenUtils.acquireTokenWithAuthCode(authCode, config);
+            // Use TokenUtils to acquire tokens
+            var authResult = TokenUtils.acquireTokenWithAuthCode(authCode, config);
 
-            // Optionally, validate and extract claims (if using ID token)
-            // Claims claims = TokenUtils.extractClaims(idToken);
+            // Use ClaimsExtractor to extract claims
+            Map<String, Claim> claims = ClaimsExtractor.extractClaims(authResult.idToken());
 
-            // Return the token as JSON
+            // Convert claims to JSON
+            StringBuilder jsonBuilder = new StringBuilder("{");
+            for (Map.Entry<String, Claim> entry : claims.entrySet()) {
+                jsonBuilder.append("\"").append(entry.getKey()).append("\": ")
+                        .append("\"").append(entry.getValue().asString()).append("\",");
+            }
+            jsonBuilder.deleteCharAt(jsonBuilder.length() - 1).append("}");
+
+            // Return claims as JSON response
             resp.setContentType("application/json");
-            resp.getWriter().write("{\"accessToken\": \"" + accessToken + "\"}");
+            resp.getWriter().write(jsonBuilder.toString());
 
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
