@@ -4,6 +4,7 @@ import com.example.authlib.config.AuthConfig;
 import com.example.authlib.utils.TokenUtils;
 import com.example.authlib.utils.ClaimsExtractor;
 import com.auth0.jwt.interfaces.Claim;
+import com.microsoft.aad.msal4j.IAuthenticationResult;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +26,7 @@ public class AuthCallbackServlet extends HttpServlet {
             }
 
             // Use TokenUtils to acquire tokens
-            var authResult = TokenUtils.acquireTokenWithAuthCode(authCode, config);
+            IAuthenticationResult authResult = TokenUtils.acquireTokenWithAuthCode(authCode, config);
 
             // Use ClaimsExtractor to extract claims
             Map<String, Claim> claims = ClaimsExtractor.extractClaims(authResult.idToken());
