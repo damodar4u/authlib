@@ -9,40 +9,20 @@ import java.io.IOException;
 import java.net.URLEncoder;
 
 public class LoginServlet extends HttpServlet {
+    private final AuthConfig config;
+
+    public LoginServlet(AuthConfig config) {
+        this.config = config;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        try {
-            // Retrieve AuthConfig from the servlet context
-            AuthConfig config = (AuthConfig) getServletContext().getAttribute("authConfig");
+        String loginUrl = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize" +
+                "?client_id=" + URLEncoder.encode(config.getClientId(), "UTF-8") +
+                "&response_type=code" +
+                "&redirect_uri=" + URLEncoder.encode(config.getRedirectUri(), "UTF-8") +
+                "&scope=openid%20profile%20email";
 
-            if (config == null) {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write("{\"error\": \"Authentication configuration is not initialized.\"}");
-                return;
-            }
-
-            // Print clientId, clientSecret, and redirectUri for debugging
-            System.out.println("Client ID: " + config.getClientId());
-            System.out.println("Client Secret: " + config.getClientSecret());
-            System.out.println("Redirect URI: " + config.getRedirectUri());
-
-            // Construct the Azure AD authorization URL
-            String loginUrl = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize" +
-                    "?client_id=" + URLEncoder.encode(config.getClientId(), "UTF-8") +
-                    "&response_type=code" +
-                    "&redirect_uri=" + URLEncoder.encode(config.getRedirectUri(), "UTF-8") +
-                    "&scope=openid%20profile%20email";
-
-            // Print loginUrl for debugging
-            System.out.println("Login URL: " + loginUrl);
-
-            // Redirect the user to Azure AD login page
-            resp.sendRedirect(loginUrl);
-
-        } catch (Exception e) {
-            // Handle unexpected errors gracefully
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\": \"Failed to redirect to login: " + e.getMessage() + "\"}");
-        }
+        resp.sendRedirect(loginUrl);
     }
 }
